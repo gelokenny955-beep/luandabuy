@@ -17,6 +17,8 @@ export interface Product {
   reviews: number;
   seller: string;
   location: string;
+  sold: number;
+  available: boolean;
 }
 
 export const products: Product[] = [
@@ -31,6 +33,8 @@ export const products: Product[] = [
     reviews: 128,
     seller: "TechStore Luanda",
     location: "Talatona",
+    sold: 1245,
+    available: true,
   },
   {
     id: "2",
@@ -43,6 +47,8 @@ export const products: Product[] = [
     reviews: 256,
     seller: "Mobile Angola",
     location: "Maianga",
+    sold: 876,
+    available: true,
   },
   {
     id: "3",
@@ -55,6 +61,8 @@ export const products: Product[] = [
     reviews: 89,
     seller: "Fashion Luanda",
     location: "Viana",
+    sold: 532,
+    available: true,
   },
   {
     id: "4",
@@ -67,6 +75,8 @@ export const products: Product[] = [
     reviews: 167,
     seller: "SportZone AO",
     location: "Kilamba",
+    sold: 1890,
+    available: true,
   },
   {
     id: "5",
@@ -79,6 +89,8 @@ export const products: Product[] = [
     reviews: 73,
     seller: "Watch House",
     location: "Talatona",
+    sold: 345,
+    available: true,
   },
   {
     id: "6",
@@ -91,6 +103,8 @@ export const products: Product[] = [
     reviews: 45,
     seller: "CompuTech AO",
     location: "Maianga",
+    sold: 198,
+    available: false,
   },
   {
     id: "7",
@@ -103,6 +117,8 @@ export const products: Product[] = [
     reviews: 94,
     seller: "Ótica Luanda",
     location: "Ingombota",
+    sold: 712,
+    available: true,
   },
   {
     id: "8",
@@ -115,6 +131,8 @@ export const products: Product[] = [
     reviews: 312,
     seller: "TechStore Luanda",
     location: "Talatona",
+    sold: 2340,
+    available: true,
   },
 ];
 

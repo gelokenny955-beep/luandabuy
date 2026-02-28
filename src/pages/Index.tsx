@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Truck, Shield, Clock, CreditCard } from "lucide-react";
 import Header from "@/components/Header";
 import HeroBanner from "@/components/HeroBanner";
 import CategoryBar from "@/components/CategoryBar";
 import ProductCard from "@/components/ProductCard";
 import Footer from "@/components/Footer";
+import WelcomePanel from "@/components/WelcomePanel";
 import { products } from "@/data/products";
 
 const features = [
@@ -16,6 +17,17 @@ const features = [
 
 export default function Index() {
   const [category, setCategory] = useState("Todos");
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    const seen = sessionStorage.getItem("lb-welcome-seen");
+    if (!seen) setShowWelcome(true);
+  }, []);
+
+  const handleDismissWelcome = () => {
+    sessionStorage.setItem("lb-welcome-seen", "1");
+    setShowWelcome(false);
+  };
 
   const filtered = category === "Todos"
     ? products
@@ -23,6 +35,8 @@ export default function Index() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {showWelcome && <WelcomePanel onDismiss={handleDismissWelcome} />}
+
       <Header />
       <HeroBanner />
 
