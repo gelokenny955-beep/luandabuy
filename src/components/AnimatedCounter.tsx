@@ -1,16 +1,34 @@
 import { useEffect, useState } from "react";
 import { Users } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-interface AnimatedCounterProps {
-  target: number;
-  duration?: number;
-}
-
-export default function AnimatedCounter({ target, duration = 2000 }: AnimatedCounterProps) {
+export default function AnimatedCounter() {
   const [count, setCount] = useState(0);
+  const [target, setTarget] = useState(0);
 
+  // Fetch real user count from Supabase
   useEffect(() => {
+    const fetchCount = async () => {
+      const { data, error } = await supabase.rpc("get_user_count");
+      if (!error && data !== null) {
+        setTarget(data);
+      }
+    };
+    fetchCount();
+
+    // Listen for auth changes to refresh count
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      fetchCount();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Animate count
+  useEffect(() => {
+    if (target === 0) return;
     let start = 0;
+    const duration = 2000;
     const increment = target / (duration / 16);
     const timer = setInterval(() => {
       start += increment;
@@ -22,7 +40,7 @@ export default function AnimatedCounter({ target, duration = 2000 }: AnimatedCou
       }
     }, 16);
     return () => clearInterval(timer);
-  }, [target, duration]);
+  }, [target]);
 
   return (
     <div className="flex items-center gap-2 text-sm">
