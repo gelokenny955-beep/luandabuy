@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, User, Menu, X, LogOut } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import AuthModal from "@/components/AuthModal";
 import logo from "@/assets/logo.png";
@@ -15,6 +16,7 @@ const navLinks = [
 
 export default function Header() {
   const { totalItems } = useCart();
+  const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
@@ -29,7 +31,7 @@ export default function Header() {
               <img src={logo} alt="Luanda Buy" className="h-9 w-9" />
             </Link>
             <div className="hidden md:block">
-              <AnimatedCounter target={7437} />
+              <AnimatedCounter />
             </div>
           </div>
 
@@ -61,13 +63,23 @@ export default function Header() {
               )}
             </Link>
 
-            <button
-              onClick={() => setAuthOpen(true)}
-              className="hidden sm:flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-hover transition-colors"
-            >
-              <User className="h-4 w-4" />
-              Entrar
-            </button>
+            {user ? (
+              <button
+                onClick={signOut}
+                className="hidden sm:flex items-center gap-2 h-10 px-4 rounded-lg bg-secondary text-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+            ) : (
+              <button
+                onClick={() => setAuthOpen(true)}
+                className="hidden sm:flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-hover transition-colors"
+              >
+                <User className="h-4 w-4" />
+                Entrar
+              </button>
+            )}
 
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
@@ -83,7 +95,7 @@ export default function Header() {
           <div className="md:hidden border-t bg-background animate-slide-in">
             <div className="container py-3">
               <div className="mb-3">
-                <AnimatedCounter target={7437} />
+                <AnimatedCounter />
               </div>
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -106,13 +118,23 @@ export default function Header() {
                     {link.label}
                   </Link>
                 ))}
-                <button
-                  onClick={() => { setMobileOpen(false); setAuthOpen(true); }}
-                  className="mt-2 flex items-center justify-center gap-2 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
-                >
-                  <User className="h-4 w-4" />
-                  Entrar / Criar Conta
-                </button>
+                {user ? (
+                  <button
+                    onClick={() => { setMobileOpen(false); signOut(); }}
+                    className="mt-2 flex items-center justify-center gap-2 h-10 rounded-lg bg-secondary text-foreground text-sm font-medium"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { setMobileOpen(false); setAuthOpen(true); }}
+                    className="mt-2 flex items-center justify-center gap-2 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
+                  >
+                    <User className="h-4 w-4" />
+                    Entrar / Criar Conta
+                  </button>
+                )}
               </nav>
             </div>
           </div>

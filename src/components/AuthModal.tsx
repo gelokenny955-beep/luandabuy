@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, CheckCircle, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type AuthView = "login" | "register" | "otp" | "success";
 
@@ -21,6 +22,7 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [otpValue, setOtpValue] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
@@ -52,12 +54,25 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
     setConfirmPassword("");
     setShowPwd(false);
     setShowConfirmPwd(false);
+    setLoading(false);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!acceptTerms) {
       toast.error("Aceite os Termos e Políticas para continuar.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: loginEmail,
+      password: loginPwd,
+    });
+    setLoading(false);
+    if (error) {
+      toast.error(error.message === "Invalid login credentials"
+        ? "Email ou senha incorretos."
+        : error.message);
       return;
     }
     toast.success("Login realizado com sucesso!");
@@ -65,7 +80,7 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
     onOpenChange(false);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!acceptTerms) {
       toast.error("Aceite os Termos e Políticas para continuar.");
@@ -79,14 +94,76 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
       toast.error("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
+
+    setLoading(true);
+
+    // Check username uniqueness
+    const { data: existingUser } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", username)
+      .maybeSingle();
+
+    if (existingUser) {
+      setLoading(false);
+      toast.error("Este nome de usuário já está em uso.");
+      return;
+    }
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          username,
+          phone,
+          date_of_birth: dob,
+        },
+      },
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
     setView("otp");
   };
 
-  const handleOtp = () => {
+  const handleOtp = async () => {
     if (otpValue.length !== 6) {
       toast.error("Insira o código de 6 dígitos.");
       return;
     }
+
+    setLoading(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otpValue,
+      type: "email",
+    });
+
+    if (error) {
+      setLoading(false);
+      toast.error("Código inválido ou expirado. Tente novamente.");
+      return;
+    }
+
+    // Update profile with additional data (trigger already created the row)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from("profiles").update({
+        phone,
+        date_of_birth: dob || null,
+      }).eq("user_id", user.id);
+    }
+
+    setLoading(false);
     setView("success");
   };
 
@@ -113,8 +190,9 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
             </DialogHeader>
             <form onSubmit={handleLogin} className="space-y-4 pt-2">
               <div className="space-y-2">
-                <Label>Email ou Nome de Usuário</Label>
+                <Label>Email</Label>
                 <Input
+                  type="email"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="seu@email.com"
@@ -150,8 +228,8 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   Confirmo que li e aceito os Termos e Políticas
                 </label>
               </div>
-              <Button type="submit" className="w-full h-11 font-semibold">
-                ENTRAR
+              <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "ENTRAR"}
               </Button>
               <p className="text-center text-sm text-muted-foreground">
                 Não tem conta?{" "}
@@ -238,8 +316,8 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                   Aceito os Termos e Políticas
                 </label>
               </div>
-              <Button type="submit" className="w-full h-11 font-semibold">
-                CRIAR CONTA
+              <Button type="submit" className="w-full h-11 font-semibold" disabled={loading}>
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "CRIAR CONTA"}
               </Button>
               <p className="text-center text-sm text-muted-foreground">
                 Já tem conta?{" "}
@@ -277,8 +355,8 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                 </InputOTPGroup>
               </InputOTP>
             </div>
-            <Button onClick={handleOtp} className="w-full h-11 font-semibold">
-              CONTINUAR
+            <Button onClick={handleOtp} className="w-full h-11 font-semibold" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "CONTINUAR"}
             </Button>
           </div>
         )}
